@@ -1,0 +1,13 @@
+﻿2018年5月9日之前收到Autolabor Pro1的用户，使用前请按照下列参数修改相应驱动。
+
+~model_param_cw 顺时针旋转运动模型参数 : 0.83
+
+~model_param_acw 逆时针旋转运动模型参数: 0.83
+
+修改文件：
+
+autolabor_pro1_driver\launch目录下
+
+driver.launch
+keyboard_move.launch
+joystick_move.launch

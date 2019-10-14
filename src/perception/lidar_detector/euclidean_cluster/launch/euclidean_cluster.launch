@@ -1,0 +1,15 @@
+<launch>
+    <arg name="max_radius" default="20"/>-->
+    <arg name="MIN_CLUSTER_SIZE" default="60"/>-->
+    <arg name="MAX_CLUSTER_SIZE" default="1000"/>-->
+
+    <node pkg="euclidean_cluster" type="euclidean_cluster_node" name="euclidean_cluster_node" output="screen">
+        <param name="lidar_topic" value="/road_space_points"/>  
+        <param name="max_radius" value="$(arg max_radius)"/>
+        <param name="MIN_CLUSTER_SIZE" value="$(arg MIN_CLUSTER_SIZE)"/>
+        <param name="MAX_CLUSTER_SIZE" value="$(arg MAX_CLUSTER_SIZE)"/>
+
+        <!--road_space_points  velodyne_points   /ray_filter/velodyne_points_filtered-->
+    </node>
+
+</launch>

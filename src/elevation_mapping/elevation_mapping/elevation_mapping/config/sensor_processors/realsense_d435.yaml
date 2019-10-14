@@ -1,0 +1,13 @@
+# Written by Lefteris kotsonis.
+# Modeling Realsense D435 Sensor Noise for Improved 3D Reconstruction and Tracking.
+sensor_processor/type: structured_light
+# 距离传感器测量长度的最小值和最大值。 超出此间隔的测量值将被忽略。
+sensor_processor/cutoff_min_depth: 0.2
+sensor_processor/cutoff_max_depth: 3.25
+# 传感器噪声模型的数据。
+sensor_processor/normal_factor_a: 0.000611
+sensor_processor/normal_factor_b:  0.003587
+sensor_processor/normal_factor_c: 0.3515
+sensor_processor/normal_factor_d: 0
+sensor_processor/normal_factor_e: 1
+sensor_processor/lateral_factor: 0.01576

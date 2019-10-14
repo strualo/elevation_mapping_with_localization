@@ -1,0 +1,40 @@
+point_cloud_topic: "/camera/depth/color/points"
+# point_cloud_topic: "/velodyne_points"
+
+map_frame_id: "map"
+robot_base_frame_id: "base_link"
+robot_pose_with_covariance_topic: "/ndt/PoseWithCovarianceStamped"
+robot_pose_cache_size: 500   # 机器人位姿缓存的大小
+track_point_frame_id: "/camera_link" # The elevation map is moved along with the robot following a track point. This is the id of the tf frame in which the track point is defined
+sensor_frame_id: "/camera_link"
+
+track_point_x: 0.0
+track_point_y: 0.0
+track_point_z: 0.0
+min_update_rate: 2.0 #从机器人姿态估计的新测量值更新高程图的最小更新速率（以Hz为单位）
+time_tolerance: 0.5
+sensor_processor/ignore_points_above: 5 #深度传感器引入的点高度的硬阈值。 在数据收集步骤中，高度超过此阈值的点将被视为无效。
+robot_motion_map_update/covariance_scale_translation_x: 0.0
+robot_motion_map_update/covariance_scale_translation_y: 0.0
+robot_motion_map_update/covariance_scale_translation_z: 0.0
+robot_motion_map_update/covariance_scale_rotation_x: 0.0
+robot_motion_map_update/covariance_scale_rotation_y: 0.0
+robot_motion_map_update/covariance_scale_rotation_z: 0.0
+
+length_in_x: 6.0   # The size (in m) of the elevation map.
+length_in_y: 6.0
+
+# 高程图中心的位置，在高程图框架中。 此参数设置生成的高程图与其发布的帧之间的平面位置偏移（map_frame_id）仅在未使用track_point_frame_id参数时才有用。
+position_x: 0.0
+position_y: 0.0
+resolution: 0.05 #The resolution (cell size in m/cell) of the elevation map.
+min_variance: 0.0001 #高程图方差数据的最小值和最大值。
+max_variance: 0.05
+mahalanobis_distance_threshold: 2.5 # 高程图中的每个单元格的高度值都存在不确定性。 根据现有高度分布的Mahalonobis距离和新测量值，输入数据与现有估计值融合，覆盖或忽略。 此参数确定马哈拉诺比斯距离的阈值，该阈值确定如何处理传入的测量。
+multi_height_noise: 0.01 # 噪声添加到高于该特定位置的当前高程图的测量值。 仅当点落在马哈拉诺比斯距离阈值上时才执行此噪声添加过程。 较高的值对于更快地适应动态环境（例如，移动物体）是有用的，但是可能在高度估计中引起更多噪声。
+fused_map_publishing_rate: 2.0 #The rate for publishing the entire (fused) elevation map.
+
+
+enable_skip_lower_points: true
+scanning_duration: 0.01
+remove_penetrated_points_rate: 5.0

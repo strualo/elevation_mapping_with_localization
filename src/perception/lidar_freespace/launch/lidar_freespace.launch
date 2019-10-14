@@ -1,0 +1,10 @@
+<launch>
+
+    <!--<arg name="lidar_topic" default="/velodne_points" />
+    <arg name="planefit_thre" default="5"/>-->
+
+    <node pkg="lidar_freespace" type="freespaceNode" name="freespaceNode" output="screen">
+        <!--<param name="lidar_topic" value="$(arg lidar_topic)"/>
+        <param name="planefit_thre" value="$(arg planefit_thre)"/>-->
+    </node>
+</launch>

@@ -1,0 +1,14 @@
+<launch>
+<param name="use_sim_time" value="false" />
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
+    <param name="global_map_file" value="$(find ndt_localization)/map/317.pcd"/>
+  </node>
+
+  <node name="MapServer" pkg="map_server" type="map_server" output="screen" args="$(find ndt_localization)/map/317.yaml"/>  
+
+</launch>
+
+
+<!--  yuquan_ndt   zhiquanyuanzi_imu -->

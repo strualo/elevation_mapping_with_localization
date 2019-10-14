@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="road_space_detector" type="road_space_detector_node" name="road_space_detector_node" output="screen">
+    <param name="map_service_name" value="/static_map"/>
+
+    </node>
+
+</launch>
