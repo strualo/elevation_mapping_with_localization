@@ -1,11 +1,3 @@
-/*
- * ElevationMap.cpp
- *
- *  Created on: Feb 5, 2014
- *      Author: Péter Fankhauser
- *	 Institute: ETH Zurich, ANYbotics
- */
-
 #include "elevation_mapping/ElevationMap.hpp"
 
 // Elevation Mapping
@@ -27,7 +19,8 @@
 using namespace std;
 using namespace grid_map;
 
-namespace elevation_mapping {
+namespace elevation_mapping 
+{
 
 ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
     : nodeHandle_(nodeHandle),
@@ -42,8 +35,8 @@ ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
 
   elevationMapRawPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("elevation_map_raw", 1);
   elevationMapFusedPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("elevation_map", 1);
-  if (!underlyingMapTopic_.empty()) underlyingMapSubscriber_ =
-      nodeHandle_.subscribe(underlyingMapTopic_, 1, &ElevationMap::underlyingMapCallback, this);
+
+  if (!underlyingMapTopic_.empty()) underlyingMapSubscriber_ = nodeHandle_.subscribe(underlyingMapTopic_, 1, &ElevationMap::underlyingMapCallback, this);
   // TODO if (enableVisibilityCleanup_) when parameter cleanup is ready.
   visbilityCleanupMapPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("visibility_cleanup_map", 1);
 
@@ -53,7 +46,7 @@ ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
 ElevationMap::~ElevationMap()
 {
 }
-
+//设置
 void ElevationMap::setGeometry(const grid_map::Length& length, const double& resolution, const grid_map::Position& position)
 {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
@@ -81,7 +74,8 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
   }
   const double scanTimeSinceInitialization = (timestamp - initialTime_).toSec();
 
-  for (unsigned int i = 0; i < pointCloud->size(); ++i) {
+  for (unsigned int i = 0; i < pointCloud->size(); ++i) 
+  {
     auto& point = pointCloud->points[i];
     Index index;
     Position position(point.x, point.y);

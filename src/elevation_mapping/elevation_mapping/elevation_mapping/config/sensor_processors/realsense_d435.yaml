@@ -11,3 +11,6 @@ sensor_processor/normal_factor_c: 0.3515
 sensor_processor/normal_factor_d: 0
 sensor_processor/normal_factor_e: 1
 sensor_processor/lateral_factor: 0.01576
+
+sensor_processor/apply_voxelgrid_filter: false
+sensor_processor/voxelgrid_filter_size: 0.03

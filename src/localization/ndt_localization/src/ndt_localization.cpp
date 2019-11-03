@@ -208,9 +208,6 @@ void NDTLocalization::init_pose_with_param()
     ROS_INFO("Current pose initialized.");
 }
 
-
-
-
 /**
  * @brief 1. caculate pdf(probability density function)(mean, covariance) for each voxel grid in model
  * 
@@ -734,7 +731,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr& msg
     tf::Transform transform2(tmp_q, tf::Vector3(current_pose_.x, current_pose_.y, current_pose_.z));
     tf_broadcaster_.sendTransform(tf::StampedTransform(transform2, ros::Time::now(), param_map_frame_, param_base_frame_));
 
-//******************************初始化odom和map的tf变换  前五次定位不用******************************
+    //******************************初始化odom和map的tf变换  前五次定位不用******************************
     tf::Quaternion tmp_q3;
     float odom_initial_x,odom_initial_y,odom_initial_yaw;
     if(ndt_num <= 5) 
@@ -751,7 +748,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr& msg
     {  //发布 
         odom_map_tf_broadcaster_.sendTransform(tf::StampedTransform(const_transform_odom_map, ros::Time::now(), param_map_frame_, "/odom"));     
     }
-//*************************发布NDT定位的里程计信息*******************************
+    //*************************发布NDT定位的里程计信息*******************************
     ndt_odometry.header.stamp = msg->header.stamp;
     ndt_odometry.header.frame_id = "/map";
     ndt_odometry.child_frame_id = param_base_frame_;

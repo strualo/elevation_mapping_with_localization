@@ -49,58 +49,46 @@ using namespace kindr_ros;
 
 namespace elevation_mapping {
 
-ElevationMapping::ElevationMapping(ros::NodeHandle& nodeHandle)
-    : nodeHandle_(nodeHandle),
-      map_(nodeHandle),
-      robotMotionMapUpdater_(nodeHandle),
-      isContinouslyFusing_(false),
-      ignoreRobotMotionUpdates_(false),
-      receivedFirstMatchingPointcloudAndPose_(false)
+ElevationMapping::ElevationMapping(ros::NodeHandle& nodeHandle): nodeHandle_(nodeHandle),map_(nodeHandle),robotMotionMapUpdater_(nodeHandle),
+      isContinouslyFusing_(false),ignoreRobotMotionUpdates_(false),receivedFirstMatchingPointcloudAndPose_(false)
 {
   ROS_INFO("Elevation mapping node started.");
-
   readParameters();
   pointCloudSubscriber_ = nodeHandle_.subscribe(pointCloudTopic_, 1, &ElevationMapping::pointCloudCallback, this);
-  if (!robotPoseTopic_.empty()) {
-    robotPoseSubscriber_.subscribe(nodeHandle_, robotPoseTopic_, 1);
+  if (!robotPoseTopic_.empty()) 
+  {
+    robotPoseSubscriber_.subscribe(nodeHandle_, robotPoseTopic_, 1);//message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>
     robotPoseCache_.connectInput(robotPoseSubscriber_);
-    robotPoseCache_.setCacheSize(robotPoseCacheSize_);
-  } else {
+    robotPoseCache_.setCacheSize(robotPoseCacheSize_); //  robotPoseCache_存储了从robotPoseTopic_ 上接收的最后robotPoseCacheSize_条消息
+  } 
+  else 
     ignoreRobotMotionUpdates_ = true;
-  }
-
-  mapUpdateTimer_ = nodeHandle_.createTimer(maxNoUpdateDuration_, &ElevationMapping::mapUpdateTimerCallback, this, true, false);
+  
+  mapUpdateTimer_ = nodeHandle_.createTimer(maxNoUpdateDuration_, &ElevationMapping::mapUpdateTimerCallback, this, true, false);//https://www.ncnynl.com/archives/201702/1296.html
 
   // Multi-threading for fusion.
   AdvertiseServiceOptions advertiseServiceOptionsForTriggerFusion = AdvertiseServiceOptions::create<std_srvs::Empty>(
-      "trigger_fusion", boost::bind(&ElevationMapping::fuseEntireMap, this, _1, _2), ros::VoidConstPtr(),
-      &fusionServiceQueue_);
+      "trigger_fusion", boost::bind(&ElevationMapping::fuseEntireMap, this, _1, _2), ros::VoidConstPtr(),&fusionServiceQueue_);
   fusionTriggerService_ = nodeHandle_.advertiseService(advertiseServiceOptionsForTriggerFusion);
 
   AdvertiseServiceOptions advertiseServiceOptionsForGetFusedSubmap = AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
-      "get_submap", boost::bind(&ElevationMapping::getFusedSubmap, this, _1, _2), ros::VoidConstPtr(),
-      &fusionServiceQueue_);
+      "get_submap", boost::bind(&ElevationMapping::getFusedSubmap, this, _1, _2), ros::VoidConstPtr(),&fusionServiceQueue_);
   fusedSubmapService_ = nodeHandle_.advertiseService(advertiseServiceOptionsForGetFusedSubmap);
 
   AdvertiseServiceOptions advertiseServiceOptionsForGetRawSubmap = AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
-      "get_raw_submap", boost::bind(&ElevationMapping::getRawSubmap, this, _1, _2), ros::VoidConstPtr(),
-      &fusionServiceQueue_);
+      "get_raw_submap", boost::bind(&ElevationMapping::getRawSubmap, this, _1, _2), ros::VoidConstPtr(),&fusionServiceQueue_);
   rawSubmapService_ = nodeHandle_.advertiseService(advertiseServiceOptionsForGetRawSubmap);
 
-  if (!fusedMapPublishTimerDuration_.isZero()) {
-    TimerOptions timerOptions = TimerOptions(
-        fusedMapPublishTimerDuration_,
-        boost::bind(&ElevationMapping::publishFusedMapCallback, this, _1), &fusionServiceQueue_,
-        false, false);
+  if (!fusedMapPublishTimerDuration_.isZero()) 
+  {
+    TimerOptions timerOptions = TimerOptions(fusedMapPublishTimerDuration_,boost::bind(&ElevationMapping::publishFusedMapCallback, this, _1), &fusionServiceQueue_,false, false);
     fusedMapPublishTimer_ = nodeHandle_.createTimer(timerOptions);
   }
 
   // Multi-threading for visibility cleanup.
-  if (map_.enableVisibilityCleanup_ && !visibilityCleanupTimerDuration_.isZero()){
-    TimerOptions timerOptions = TimerOptions(
-        visibilityCleanupTimerDuration_,
-        boost::bind(&ElevationMapping::visibilityCleanupCallback, this, _1), &visibilityCleanupQueue_,
-        false, false);
+  if (map_.enableVisibilityCleanup_ && !visibilityCleanupTimerDuration_.isZero())
+  {
+    TimerOptions timerOptions = TimerOptions(visibilityCleanupTimerDuration_,boost::bind(&ElevationMapping::visibilityCleanupCallback, this, _1), &visibilityCleanupQueue_,false, false);
     visibilityCleanupTimer_ = nodeHandle_.createTimer(timerOptions);
   }
 
@@ -134,10 +122,13 @@ bool ElevationMapping::readParameters()
 
   double minUpdateRate;
   nodeHandle_.param("min_update_rate", minUpdateRate, 2.0);
-  if (minUpdateRate == 0.0) {
+  if (minUpdateRate == 0.0) 
+  {
     maxNoUpdateDuration_.fromSec(0.0);
     ROS_WARN("Rate for publishing the map is zero.");
-  } else {
+  } 
+  else 
+  {
     maxNoUpdateDuration_.fromSec(1.0 / minUpdateRate);
   }
   ROS_ASSERT(!maxNoUpdateDuration_.isZero());
@@ -151,10 +142,14 @@ bool ElevationMapping::readParameters()
   if (fusedMapPublishingRate == 0.0) {
     fusedMapPublishTimerDuration_.fromSec(0.0);
     ROS_WARN("Rate for publishing the fused map is zero. The fused elevation map will not be published unless the service `triggerFusion` is called.");
-  } else if (std::isinf(fusedMapPublishingRate)){
+  } 
+  else if (std::isinf(fusedMapPublishingRate))
+  {
     isContinouslyFusing_ = true;
     fusedMapPublishTimerDuration_.fromSec(0.0);
-  } else {
+  } 
+  else 
+  {
     fusedMapPublishTimerDuration_.fromSec(1.0 / fusedMapPublishingRate);
   }
 
@@ -247,9 +242,9 @@ void ElevationMapping::visibilityCleanupThread()
   }
 }
 
-void ElevationMapping::pointCloudCallback(
-    const sensor_msgs::PointCloud2& rawPointCloud)
+void ElevationMapping::pointCloudCallback( const sensor_msgs::PointCloud2& rawPointCloud)
 {
+
   // Check if point cloud has corresponding robot pose at the beginning
   if(!receivedFirstMatchingPointcloudAndPose_) {
     const double oldestPoseTime = robotPoseCache_.getOldestTime().toSec();
@@ -258,7 +253,8 @@ void ElevationMapping::pointCloudCallback(
     if(currentPointCloudTime < oldestPoseTime) {
       ROS_WARN_THROTTLE(5, "No corresponding point cloud and pose are found. Waiting for first match.");
       return;
-    } else {
+    } 
+    else {
       ROS_INFO("First corresponding point cloud and pose found, initialized. ");
       receivedFirstMatchingPointcloudAndPose_ = true;
     }
@@ -292,7 +288,8 @@ void ElevationMapping::pointCloudCallback(
   // Get robot pose covariance matrix at timestamp of point cloud.
   Eigen::Matrix<double, 6, 6> robotPoseCovariance;
   robotPoseCovariance.setZero();
-  if (!ignoreRobotMotionUpdates_) {
+  if (!ignoreRobotMotionUpdates_) 
+  {
     boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> poseMessage = robotPoseCache_.getElemBeforeTime(lastPointCloudUpdateTime_);
     if (!poseMessage) {
       // Tell the user that either for the timestamp no pose is available or that the buffer is possibly empty
@@ -309,15 +306,16 @@ void ElevationMapping::pointCloudCallback(
   // Process point cloud.
   PointCloud<PointXYZRGB>::Ptr pointCloudProcessed(new PointCloud<PointXYZRGB>);
   Eigen::VectorXf measurementVariances;
-  if (!sensorProcessor_->process(pointCloud, robotPoseCovariance, pointCloudProcessed,
-                                 measurementVariances)) {
+  if (!sensorProcessor_->process(pointCloud, robotPoseCovariance, pointCloudProcessed, measurementVariances)) 
+  {
     ROS_ERROR("Point cloud could not be processed.");
     resetMapUpdateTimer();
     return;
   }
 
   // Add point cloud to elevation map.
-  if (!map_.add(pointCloudProcessed, measurementVariances, lastPointCloudUpdateTime_, Eigen::Affine3d(sensorProcessor_->transformationSensorToMap_))) {
+  if (!map_.add(pointCloudProcessed, measurementVariances, lastPointCloudUpdateTime_, Eigen::Affine3d(sensorProcessor_->transformationSensorToMap_))) 
+  {
     ROS_ERROR("Adding point cloud to elevation map failed.");
     resetMapUpdateTimer();
     return;
@@ -325,7 +323,8 @@ void ElevationMapping::pointCloudCallback(
 
   // Publish elevation map.
   map_.publishRawElevationMap();
-  if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
+  if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) 
+  {
     map_.fuseAll();
     map_.publishFusedElevationMap();
   }
@@ -412,8 +411,7 @@ bool ElevationMapping::updatePrediction(const ros::Time& time)
   HomTransformQuatD robotPose;
   convertFromRosGeometryMsg(poseMessage->pose.pose, robotPose);
   // Covariance is stored in row-major in ROS: http://docs.ros.org/api/geometry_msgs/html/msg/PoseWithCovariance.html
-  Eigen::Matrix<double, 6, 6> robotPoseCovariance = Eigen::Map<
-      const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(poseMessage->pose.covariance.data(), 6, 6);
+  Eigen::Matrix<double, 6, 6> robotPoseCovariance = Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(poseMessage->pose.covariance.data(), 6, 6);
 
   // Compute map variance update from motion prediction.
   robotMotionMapUpdater_.update(map_, robotPose, robotPoseCovariance, time);
@@ -566,14 +564,15 @@ void ElevationMapping::resetMapUpdateTimer()
 {
   mapUpdateTimer_.stop();
   Duration periodSinceLastUpdate = ros::Time::now() - map_.getTimeOfLastUpdate();
-  if (periodSinceLastUpdate > maxNoUpdateDuration_) periodSinceLastUpdate.fromSec(0.0);
+  if (periodSinceLastUpdate > maxNoUpdateDuration_) 
+      periodSinceLastUpdate.fromSec(0.0);
   mapUpdateTimer_.setPeriod(maxNoUpdateDuration_ - periodSinceLastUpdate);
   mapUpdateTimer_.start();
 }
 
 void ElevationMapping::stopMapUpdateTimer()
 {
-  mapUpdateTimer_.stop();
+  mapUpdateTimer_.stop();//还可以通过stop()、setPeriod(ros::Duration)和start()来规划再执行一次。
 }
 
 } /* namespace */

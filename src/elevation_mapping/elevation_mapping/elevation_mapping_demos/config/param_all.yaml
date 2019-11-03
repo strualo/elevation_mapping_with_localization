@@ -38,3 +38,37 @@ fused_map_publishing_rate: 2.0 #The rate for publishing the entire (fused) eleva
 enable_skip_lower_points: true
 scanning_duration: 0.01
 remove_penetrated_points_rate: 5.0
+
+# *******************************************************
+
+point_cloud_topic: "/camera/depth/color/points"
+# point_cloud_topic: "/velodyne_points"
+
+map_frame_id: "map"
+robot_base_frame_id: "base_link"
+robot_pose_with_covariance_topic: "/ndt/PoseWithCovarianceStamped"
+robot_pose_cache_size: 200
+track_point_frame_id: "/camera_link"
+sensor_frame_id: "/camera_link"
+track_point_x: 0.0
+track_point_y: 0.0
+track_point_z: 0.0
+
+# *******************************************************
+
+# Written by Lefteris kotsonis.
+# Modeling Realsense D435 Sensor Noise for Improved 3D Reconstruction and Tracking.
+sensor_processor/type: structured_light
+# 距离传感器测量长度的最小值和最大值。 超出此间隔的测量值将被忽略。
+sensor_processor/cutoff_min_depth: 0.2
+sensor_processor/cutoff_max_depth: 3.25
+# 传感器噪声模型的数据。
+sensor_processor/normal_factor_a: 0.000611
+sensor_processor/normal_factor_b:  0.003587
+sensor_processor/normal_factor_c: 0.3515
+sensor_processor/normal_factor_d: 0
+sensor_processor/normal_factor_e: 1
+sensor_processor/lateral_factor: 0.01576
+
+sensor_processor/apply_voxelgrid_filter: false
+sensor_processor/voxelgrid_filter_size: 0.03

@@ -1,12 +1,3 @@
-/*
- * GridMapVisualization.hpp
- *
- *  Created on: Nov 19, 2013
- *      Author: Péter Fankhauser
- *	 Institute: ETH Zurich, ANYbotics
- *
- */
-
 #pragma once
 
 #include <grid_map_msgs/GridMap.h>

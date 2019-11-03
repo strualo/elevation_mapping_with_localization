@@ -1,10 +1,3 @@
-/*
- * GridMapVisualization.cpp
- *
- *  Created on: Nov 19, 2013
- *      Author: Péter Fankhauser
- *	 Institute: ETH Zurich, ANYbotics
- */
 
 #include "grid_map_visualization/GridMapVisualization.hpp"
 #include <grid_map_core/GridMap.hpp>
@@ -13,20 +6,15 @@
 using namespace std;
 using namespace ros;
 
-namespace grid_map_visualization {
+namespace grid_map_visualization 
+{
 
-GridMapVisualization::GridMapVisualization(ros::NodeHandle& nodeHandle,
-                                           const std::string& parameterName)
-    : nodeHandle_(nodeHandle),
-      visualizationsParameter_(parameterName),
-      factory_(nodeHandle_),
-      isSubscribed_(false)
+GridMapVisualization::GridMapVisualization(ros::NodeHandle& nodeHandle,const std::string& parameterName)
+    : nodeHandle_(nodeHandle),visualizationsParameter_(parameterName),factory_(nodeHandle_),isSubscribed_(false)
 {
   ROS_INFO("Grid map visualization node started.");
   readParameters();
-  activityCheckTimer_ = nodeHandle_.createTimer(activityCheckDuration_,
-                                                &GridMapVisualization::updateSubscriptionCallback,
-                                                this);
+  activityCheckTimer_ = nodeHandle_.createTimer(activityCheckDuration_, &GridMapVisualization::updateSubscriptionCallback,this);
   initialize();
 }
 
@@ -45,7 +33,8 @@ bool GridMapVisualization::readParameters()
 
   // Configure the visualizations from a configuration stored on the parameter server.
   XmlRpc::XmlRpcValue config;
-  if (!nodeHandle_.getParam(visualizationsParameter_, config)) {
+  if (!nodeHandle_.getParam(visualizationsParameter_, config)) 
+  {
     ROS_WARN(
         "Could not load the visualizations configuration from parameter %s,are you sure it"
         "was pushed to the parameter server? Assuming that you meant to leave it empty.",
@@ -62,7 +51,8 @@ bool GridMapVisualization::readParameters()
   }
 
   // Iterate over all visualizations (may be just one),
-  for (unsigned int i = 0; i < config.size(); ++i) {
+  for (unsigned int i = 0; i < config.size(); ++i) 
+  {
     if (config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct) {
       ROS_ERROR("%s: Visualizations must be specified as maps, but they are XmlRpcType:%d",
                 visualizationsParameter_.c_str(), config[i].getType());
@@ -84,11 +74,9 @@ bool GridMapVisualization::readParameters()
           return false;
         }
 
-        if (!config[j].hasMember("name")
-            || config[i]["name"].getType() != XmlRpc::XmlRpcValue::TypeString
-            || config[j]["name"].getType() != XmlRpc::XmlRpcValue::TypeString) {
-          ROS_ERROR("%s: Visualizations names must be strings, but they are XmlRpcTypes:%d and %d",
-                    visualizationsParameter_.c_str(), config[i].getType(), config[j].getType());
+        if (!config[j].hasMember("name")|| config[i]["name"].getType() != XmlRpc::XmlRpcValue::TypeString|| config[j]["name"].getType() != XmlRpc::XmlRpcValue::TypeString) 
+        {
+          ROS_ERROR("%s: Visualizations names must be strings, but they are XmlRpcTypes:%d and %d", visualizationsParameter_.c_str(), config[i].getType(), config[j].getType());
           return false;
         }
 
@@ -109,7 +97,8 @@ bool GridMapVisualization::readParameters()
     }
   }
 
-  for (int i = 0; i < config.size(); ++i) {
+  for (int i = 0; i < config.size(); ++i) 
+  {
     std::string type = config[i]["type"];
     std::string name = config[i]["name"];
     auto visualization = factory_.getInstance(type, name);
@@ -157,14 +146,16 @@ void GridMapVisualization::updateSubscriptionCallback(const ros::TimerEvent&)
 
 void GridMapVisualization::callback(const grid_map_msgs::GridMap& message)
 {
-  ROS_DEBUG("Grid map visualization received a map (timestamp %f) for visualization.",
-            message.info.header.stamp.toSec());
+  ROS_DEBUG("Grid map visualization received a map (timestamp %f) for visualization.",message.info.header.stamp.toSec());
   grid_map::GridMap map;
   grid_map::GridMapRosConverter::fromMessage(message, map);
-
-  for (auto& visualization : visualizations_) {
+  int ii=0;
+  for (auto& visualization : visualizations_) 
+  {
     visualization->visualize(map);
+    ii++;
   }
+ //ROS_INFO("................. %d  ",ii);
 }
 
 } /* namespace */

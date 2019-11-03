@@ -3,7 +3,7 @@
 
   <!-- Load the image. -->
   <node pkg="grid_map_demos" type="image_publisher.py" name="image_publisher" output="screen">
-    <param name="image_path" value="$(find grid_map_demos)/data/eth_logo.png" />
+    <param name="image_path" value="$(find grid_map_demos)/data/macsierra-012.jpg" />
     <param name="topic" value="~image" />
   </node>
 

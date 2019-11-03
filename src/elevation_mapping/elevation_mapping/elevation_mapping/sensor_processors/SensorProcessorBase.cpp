@@ -71,7 +71,7 @@ bool SensorProcessorBase::process(
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudSensorFrame(new pcl::PointCloud<pcl::PointXYZRGB>);
   transformPointCloud(pointCloudInput, pointCloudSensorFrame, sensorFrameId_);
   filterPointCloud(pointCloudSensorFrame);
-  //filterPointCloudSensorType(pointCloudSensorFrame);
+  filterPointCloudSensorType(pointCloudSensorFrame);
 
   if (!transformPointCloud(pointCloudSensorFrame, pointCloudMapFrame, mapFrameId_)) return false;
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> pointClouds({pointCloudMapFrame, pointCloudSensorFrame});
@@ -136,19 +136,18 @@ bool SensorProcessorBase::transformPointCloud(
   return true;
 }
 
-void SensorProcessorBase::removePointsOutsideLimits(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr reference, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& pointClouds)
+void SensorProcessorBase::removePointsOutsideLimits(
+    pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr reference, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& pointClouds)
 {
   if (!std::isfinite(ignorePointsLowerThreshold_) && !std::isfinite(ignorePointsUpperThreshold_)) return;
   ROS_DEBUG("Limiting point cloud to the height interval of [%f, %f] relative to the robot base.", ignorePointsLowerThreshold_, ignorePointsUpperThreshold_);
 
   pcl::PassThrough<pcl::PointXYZRGB> passThroughFilter(true);
   passThroughFilter.setInputCloud(reference);
-  passThroughFilter.setFilterFieldName("z"); // TODO: Should this be configurable???
-  //double relativeLowerThreshold = translationMapToBaseInMapFrame_.z() + ignorePointsLowerThreshold_ -1.5;
+  passThroughFilter.setFilterFieldName("z"); // TODO: Should this be configurable?
   double relativeLowerThreshold = translationMapToBaseInMapFrame_.z() + ignorePointsLowerThreshold_;
   double relativeUpperThreshold = translationMapToBaseInMapFrame_.z() + ignorePointsUpperThreshold_;
   passThroughFilter.setFilterLimits(relativeLowerThreshold, relativeUpperThreshold);
-  
   pcl::IndicesPtr insideIndeces(new std::vector<int>);
   passThroughFilter.filter(*insideIndeces);
 
