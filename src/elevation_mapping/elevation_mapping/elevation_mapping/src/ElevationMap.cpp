@@ -46,7 +46,7 @@ ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
 ElevationMap::~ElevationMap()
 {
 }
-//设置
+//设置grid map的外形参数
 void ElevationMap::setGeometry(const grid_map::Length& length, const double& resolution, const grid_map::Position& position)
 {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
@@ -56,6 +56,16 @@ void ElevationMap::setGeometry(const grid_map::Length& length, const double& res
   ROS_INFO_STREAM("Elevation map grid resized to " << rawMap_.getSize()(0) << " rows and "  << rawMap_.getSize()(1) << " columns.");
 }
 
+/***************************************************************
+	FunctionName:	ElevationMap::add
+	Purpose:		 添加新的点云到elevation map 中
+	Parameter:		
+					1 pointCloud  经过sensorProcessor_->process的点云 pointCloud Processed
+					2 pointCloudVariances  经过computeVariances 计算出的测量方差
+          3 timestamp  lastPointCloudUpdateTime_
+          4 transformationSensorToMap 传感器到map的变换矩阵
+
+  ****************************************************************/
 bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances, const ros::Time& timestamp, const Eigen::Affine3d& transformationSensorToMap)
 {
   if (pointCloud->size() != pointCloudVariances.size()) {
@@ -74,7 +84,7 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
   }
   const double scanTimeSinceInitialization = (timestamp - initialTime_).toSec();
 
-  for (unsigned int i = 0; i < pointCloud->size(); ++i) 
+  for (unsigned int i = 0; i < pointCloud->size(); ++i) //循环操作每个点 ,并且计算每个方格对应的属性
   {
     auto& point = pointCloud->points[i];
     Index index;
@@ -104,22 +114,28 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
       horizontalVarianceY = minHorizontalVariance_;
       horizontalVarianceXY = 0.0;
       colorVectorToValue(point.getRGBVector3i(), color);
+      //colorVectorToValue(Eigen::Vector3i (100, 100, 100), color);//Eigen::Vector3i getRGBVector3i () const { return (Eigen::Vector3i (r, g, b)); }  返回color 在GridMapMath
       continue;
     }
 
     // Deal with multiple heights in one cell.
     const double mahalanobisDistance = fabs(point.z - elevation) / sqrt(variance);
-    if (mahalanobisDistance > mahalanobisDistanceThreshold_) {
-      if (scanTimeSinceInitialization - time <= scanningDuration_ && elevation > point.z) {
+    if (mahalanobisDistance > mahalanobisDistanceThreshold_) 
+    {
+      if (scanTimeSinceInitialization - time <= scanningDuration_ && elevation > point.z) 
+      {
         // Ignore point if measurement is from the same point cloud (time comparison) and
         // if measurement is lower then the elevation in the map.
-      } else if (scanTimeSinceInitialization - time <= scanningDuration_) {
+      } 
+      else if (scanTimeSinceInitialization - time <= scanningDuration_) 
+      {
         // If point is higher.
         elevation = point.z;
         variance = pointVariance;
-      } else {
+      } 
+      else 
         variance += multiHeightNoise_;
-      }
+      
       continue;
     }
 
@@ -137,7 +153,11 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
     elevation = (variance * point.z + pointVariance * elevation) / (variance + pointVariance);
     variance = (pointVariance * variance) / (pointVariance + variance);
     // TODO Add color fusion.
-    colorVectorToValue(point.getRGBVector3i(), color);
+    //colorVectorToValue(point.getRGBVector3i(), color);
+    // if(variance <= -5)
+     colorVectorToValue(Eigen::Vector3i (0, 255, 0), color);//Eigen::Vector3i getRGBVector3i () const { return (Eigen::Vector3i (r, g, b)); }  返回color 在GridMapMath
+    // else
+    //   colorVectorToValue(Eigen::Vector3i (255, 0, 0), color);//Eigen::Vector3i getRGBVector3i () const { return (Eigen::Vector3i (r, g, b)); }  返回color 在GridMapMath
     time = scanTimeSinceInitialization;
 
     // Horizontal variances are reset.
@@ -155,8 +175,7 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
 }
 
 bool ElevationMap::update(const grid_map::Matrix& varianceUpdate, const grid_map::Matrix& horizontalVarianceUpdateX,
-                          const grid_map::Matrix& horizontalVarianceUpdateY,
-                          const grid_map::Matrix& horizontalVarianceUpdateXY, const ros::Time& time)
+                          const grid_map::Matrix& horizontalVarianceUpdateY,const grid_map::Matrix& horizontalVarianceUpdateXY, const ros::Time& time)
 {
   boost::recursive_mutex::scoped_lock scopedLock(rawMapMutex_);
 
@@ -492,6 +511,11 @@ bool ElevationMap::publishRawElevationMap()
   ROS_DEBUG("Elevation map raw has been published.");
   return true;
 }
+/***************************************************************
+	FunctionName:	publishFusedElevationMap
+	Purpose:		 发布融合后的 ElevationMap 包括uncertainty_range 信息!!!
+	Parameter:  none		
+    ****************************************************************/
 
 bool ElevationMap::publishFusedElevationMap()
 {
@@ -500,12 +524,38 @@ bool ElevationMap::publishFusedElevationMap()
   GridMap fusedMapCopy = fusedMap_;
   scopedLock.unlock();
   fusedMapCopy.add("uncertainty_range", fusedMapCopy.get("upper_bound") - fusedMapCopy.get("lower_bound"));
+  for(GridMapIterator it(fusedMapCopy); !it.isPastEnd(); ++it) 
+  {
+      auto& color1 = fusedMapCopy.at("color", *it);
+      if(fusedMapCopy.at("uncertainty_range",*it) < 0.1 )
+      {
+        colorVectorToValue(Eigen::Vector3i (0, 255, 0), color1);//Eigen::Vector3i getRGBVector3i () const { return (Eigen::Vector3i (r, g, b)); }  返回color 在GridMapMath
+      }
+      else
+      {
+        colorVectorToValue(Eigen::Vector3i (255, 0, 0), color1);//Eigen::Vector3i getRGBVector3i () const { return (Eigen::Vector3i (r, g, b)); }  返回color 在GridMapMath
+      }
+  }
   grid_map_msgs::GridMap message;
   GridMapRosConverter::toMessage(fusedMapCopy, message);
   elevationMapFusedPublisher_.publish(message);
   ROS_DEBUG("Elevation map (fused) has been published.");
   return true;
 }
+
+// bool ElevationMap::publishFusedElevationMap()
+// {
+//   if (!hasFusedMapSubscribers()) return false;
+//   boost::recursive_mutex::scoped_lock scopedLock(fusedMapMutex_);
+//   GridMap fusedMapCopy = fusedMap_;
+//   scopedLock.unlock();
+//   fusedMapCopy.add("uncertainty_range", fusedMapCopy.get("upper_bound") - fusedMapCopy.get("lower_bound"));
+//   grid_map_msgs::GridMap message;
+//   GridMapRosConverter::toMessage(fusedMapCopy, message);
+//   elevationMapFusedPublisher_.publish(message);
+//   ROS_DEBUG("Elevation map (fused) has been published.");
+//   return true;
+// }
 
 bool ElevationMap::publishVisibilityCleanupMap()
 {

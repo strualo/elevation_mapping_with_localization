@@ -27,7 +27,7 @@ length_in_y: 6.0
 # 高程图中心的位置，在高程图框架中。 此参数设置生成的高程图与其发布的帧之间的平面位置偏移（map_frame_id）仅在未使用track_point_frame_id参数时才有用。
 position_x: 0.0
 position_y: 0.0
-resolution: 0.01 #The resolution (cell size in m/cell) of the elevation map.
+resolution: 0.02 #The resolution (cell size in m/cell) of the elevation map.
 min_variance: 0.0001 #高程图方差数据的最小值和最大值。
 max_variance: 0.05
 mahalanobis_distance_threshold: 2.5 # 高程图中的每个单元格的高度值都存在不确定性。 根据现有高度分布的Mahalonobis距离和新测量值，输入数据与现有估计值融合，覆盖或忽略。 此参数确定马哈拉诺比斯距离的阈值，该阈值确定如何处理传入的测量。

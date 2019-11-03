@@ -300,13 +300,13 @@ void ElevationMapping::pointCloudCallback( const sensor_msgs::PointCloud2& rawPo
       }
       return;
     }
-    robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
+    robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6); //定位的协方差矩阵
   }
 
   // Process point cloud.
   PointCloud<PointXYZRGB>::Ptr pointCloudProcessed(new PointCloud<PointXYZRGB>);
   Eigen::VectorXf measurementVariances;
-  if (!sensorProcessor_->process(pointCloud, robotPoseCovariance, pointCloudProcessed, measurementVariances)) 
+  if (!sensorProcessor_->process(pointCloud, robotPoseCovariance, pointCloudProcessed, measurementVariances))   //pointCloud 获取的实时点云 process作用:
   {
     ROS_ERROR("Point cloud could not be processed.");
     resetMapUpdateTimer();

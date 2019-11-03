@@ -58,23 +58,30 @@ bool SensorProcessorBase::readParameters()
   return true;
 }
 
-bool SensorProcessorBase::process(
-    const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloudInput,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudMapFrame,
-    Eigen::VectorXf& variances)
-{
+
+/***************************************************************
+	FunctionName:	process
+	Purpose:		转换输入点云 至 全局MAP坐标系,并且做滤波处理 并且计算variances
+	Parameter:		
+					1 pointCloudInput  输入的传感器原始点云
+					2 robotPoseCovariance  机器人定位的协方差矩阵
+	Return:	1	pointCloudMapFrame 滤波处理后,输出的转换至 map 坐标系的点云
+          2 variances  测量方差
+  ****************************************************************/
+bool SensorProcessorBase::process( const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloudInput, const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,  //定位的协方差矩阵
+                                   const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudMapFrame, Eigen::VectorXf& variances) //pointCloudInput 实时点云
+{ 
   ros::Time timeStamp;
   timeStamp.fromNSec(1000 * pointCloudInput->header.stamp);
   if (!updateTransformations(timeStamp)) return false;
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudSensorFrame(new pcl::PointCloud<pcl::PointXYZRGB>);
   transformPointCloud(pointCloudInput, pointCloudSensorFrame, sensorFrameId_);
-  filterPointCloud(pointCloudSensorFrame);
+  filterPointCloud(pointCloudSensorFrame); //voxel filter
   //filterPointCloudSensorType(pointCloudSensorFrame);
 
-  if (!transformPointCloud(pointCloudSensorFrame, pointCloudMapFrame, mapFrameId_)) return false;
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> pointClouds({pointCloudMapFrame, pointCloudSensorFrame});
+  if (!transformPointCloud(pointCloudSensorFrame, pointCloudMapFrame, mapFrameId_)) return false; //点云转换到全局坐标
+  std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > pointClouds({pointCloudMapFrame, pointCloudSensorFrame});
   removePointsOutsideLimits(pointCloudMapFrame, pointClouds);
   if (!computeVariances(pointCloudSensorFrame, robotPoseCovariance, variances)) return false;
 
@@ -108,10 +115,15 @@ bool SensorProcessorBase::updateTransformations(const ros::Time& timeStamp)
   }
 }
 
-bool SensorProcessorBase::transformPointCloud(
-    pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloud,
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudTransformed,
-    const std::string& targetFrame)
+/***************************************************************
+	FunctionName:	transformPointCloud
+	Purpose:		根据 TF 变换转换输入点云 至 全局MAP坐标系 
+	Inpute Parameter:(隐含获取TF变换)
+					1 pointCloud  输入的传感器原始点云
+					2 targetFrame  目标坐标系 
+	Return:	1	pointCloudTransformed 输出的转换至 map 坐标系的点云
+  ****************************************************************/
+bool SensorProcessorBase::transformPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudTransformed,const std::string& targetFrame)
 {
   ros::Time timeStamp;
   timeStamp.fromNSec(1000 * pointCloud->header.stamp);
@@ -131,10 +143,18 @@ bool SensorProcessorBase::transformPointCloud(
   pcl::transformPointCloud(*pointCloud, *pointCloudTransformed, transform.cast<float>());
   pointCloudTransformed->header.frame_id = targetFrame;
 
-  ROS_DEBUG_THROTTLE(5, "Point cloud transformed to frame %s for time stamp %f.", targetFrame.c_str(),
-      ros::Time(pointCloudTransformed->header.stamp).toSec());
+  ROS_DEBUG_THROTTLE(5, "Point cloud transformed to frame %s for time stamp %f.", targetFrame.c_str(),ros::Time(pointCloudTransformed->header.stamp).toSec());
   return true;
 }
+
+/***************************************************************
+	FunctionName:	removePointsOutsideLimits
+	Purpose:		根据 TF 变换转换输入点云 至 全局MAP坐标系 
+	Inpute Parameter:(隐含获取TF变换)
+					1 pointCloud  输入的传感器原始点云
+					2 targetFrame  目标坐标系 
+	Return:	1	pointCloudTransformed 输出的转换至 map 坐标系的点云
+  ****************************************************************/
 
 void SensorProcessorBase::removePointsOutsideLimits(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr reference, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& pointClouds)
 {

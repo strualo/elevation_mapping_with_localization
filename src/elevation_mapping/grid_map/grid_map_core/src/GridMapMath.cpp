@@ -532,7 +532,7 @@ bool colorValueToVector(const float& colorValue, Eigen::Vector3f& colorVector)
   return true;
 }
 
-bool colorVectorToValue(const Eigen::Vector3i& colorVector, unsigned long& colorValue)
+bool colorVectorToValue(const Eigen::Vector3i& colorVector, unsigned long& colorValue) 
 {
   colorValue = ((int)colorVector(0)) << 16 | ((int)colorVector(1)) << 8 | ((int)colorVector(2));
   return true;

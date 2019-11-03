@@ -1,11 +1,3 @@
-/*
- * StructuredLightSensorProcessor.cpp
- *
- *  Created on: Feb 5, 2014
- *      Author: Péter Fankhauser
- *   Institute: ETH Zurich, ANYbotics
- */
-
 #include <elevation_mapping/sensor_processors/StructuredLightSensorProcessor.hpp>
 
 // PCL
@@ -49,11 +41,17 @@ bool StructuredLightSensorProcessor::readParameters()
   nodeHandle_.param("sensor_processor/cutoff_max_depth", sensorParameters_["cutoff_max_depth"], std::numeric_limits<double>::max());
   return true;
 }
+/***************************************************************
+	FunctionName:	computeVariances
+	Purpose:		根据输入点云 和 机器人位置的协方差矩阵 和 传感器模型 计算测量方差
+	Parameter:		
+					1 pointCloud  输入的传感器原始点云
+					2 robotPoseCovariance  机器人定位的协方差矩阵
+	Return:	        1 variances  输出的测量方差向量 每个点对应一个方差
+  ****************************************************************/
 
-bool StructuredLightSensorProcessor::computeVariances(
-		const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloud,
-		const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-		Eigen::VectorXf& variances)
+bool StructuredLightSensorProcessor::computeVariances(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pointCloud,
+									const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,Eigen::VectorXf& variances)
 {
 	variances.resize(pointCloud->size());
 
@@ -72,7 +70,8 @@ bool StructuredLightSensorProcessor::computeVariances(
 	const Eigen::Matrix3f C_SB_transpose = rotationBaseToSensor_.transposed().toImplementation().cast<float>();
 	const Eigen::Matrix3f B_r_BS_skew = kindr::getSkewMatrixFromVector(Eigen::Vector3f(translationBaseToSensorInBaseFrame_.toImplementation().cast<float>()));
 
-  for (unsigned int i = 0; i < pointCloud->size(); ++i) {
+  for (unsigned int i = 0; i < pointCloud->size(); ++i) 
+  {
 		// For every point in point cloud.
 
 		// Preparation.
@@ -84,10 +83,9 @@ bool StructuredLightSensorProcessor::computeVariances(
 		float measurementDistance = pointVector.z();
 
 		// Compute sensor covariance matrix (Sigma_S) with sensor model.
-                float deviationNormal = sensorParameters_.at("normal_factor_a")
-                    + sensorParameters_.at("normal_factor_b")
-                        * (measurementDistance - sensorParameters_.at("normal_factor_c")) * (measurementDistance - sensorParameters_.at("normal_factor_c"))
-                    + sensorParameters_.at("normal_factor_d") * pow(measurementDistance, sensorParameters_.at("normal_factor_e"));
+        float deviationNormal = sensorParameters_.at("normal_factor_a")+ sensorParameters_.at("normal_factor_b")
+              * (measurementDistance - sensorParameters_.at("normal_factor_c")) * (measurementDistance - sensorParameters_.at("normal_factor_c"))
+              + sensorParameters_.at("normal_factor_d") * pow(measurementDistance, sensorParameters_.at("normal_factor_e"));
 		float varianceNormal = deviationNormal * deviationNormal;
 		float deviationLateral = sensorParameters_.at("lateral_factor") * measurementDistance;
 		float varianceLateral = deviationLateral * deviationLateral;
@@ -109,8 +107,8 @@ bool StructuredLightSensorProcessor::computeVariances(
 	return true;
 }
 
-bool StructuredLightSensorProcessor::filterPointCloudSensorType(
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud) {
+bool StructuredLightSensorProcessor::filterPointCloudSensorType(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud) 
+{
     pcl::PassThrough<pcl::PointXYZRGB> passThroughFilter;
     pcl::PointCloud<pcl::PointXYZRGB> tempPointCloud;
 
